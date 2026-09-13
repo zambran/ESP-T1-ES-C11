@@ -1,83 +1,45 @@
 # Documentação Arquitetural — Aplicativo de Agendamento de Consultas
 
-## 1. Visão geral
+## 1. Sobre o projeto
 
-Este repositório documenta uma pequena fase de *discovery* arquitetural de um aplicativo móvel para agendamento de consultas médicas. O trabalho utiliza a abordagem **diagrams as code**, mantendo os diagramas em Mermaid para que possam ser versionados, revisados e reproduzidos junto à documentação.
+Este repositório apresenta uma pequena fase de *discovery* arquitetural de um aplicativo móvel para agendamento de consultas médicas, utilizando **GenAI** e a abordagem **diagrams as code**.
 
-O sistema é um cenário acadêmico, utilizado anteriormente em outra atividade da disciplina. Para esta etapa, o escopo foi reduzido à jornada de agendamento de uma consulta.
+O cenário é acadêmico e foi reaproveitado de uma atividade anterior da disciplina. Como o contexto original possui informações limitadas, foram identificadas lacunas e adotadas algumas hipóteses para permitir a elaboração dos diagramas. Essas hipóteses são explicitadas para não serem confundidas com requisitos reais do sistema.
 
-## 2. Escopo
+## 2. Meus inputs e definição do escopo
 
-O recorte contempla:
+O contexto inicial fornecido para a GenAI foi baseado no projeto anterior, que descrevia um aplicativo móvel com:
 
-* consulta de horários disponíveis;
-* gerenciamento da disponibilidade dos médicos;
-* realização e confirmação de agendamentos;
-* persistência dos dados;
-* notificações relacionadas aos agendamentos;
-* integração posterior com um sistema externo de prontuário eletrônico.
+* cadastro de usuários;
+* gerenciamento de agenda médica;
+* agendamento de consultas;
+* notificações;
+* integração com um sistema externo de prontuário eletrônico.
 
-Ficam fora do escopo dos diagramas funcionalidades como gestão administrativa, histórico clínico detalhado, faturamento, convênios e políticas avançadas de cancelamento.
+Durante o *discovery*, o escopo foi reduzido para a **jornada de agendamento de uma consulta**, envolvendo consulta de horários disponíveis, seleção e confirmação do agendamento e posterior integração com o prontuário.
 
-## 3. Nível da visão
+Para simplificar a atividade, foram adotadas as seguintes decisões:
 
-O diagrama estrutural utiliza uma visão inspirada no **C4 no nível de Containers**, mostrando os principais blocos do sistema e suas dependências.
+* pacientes e médicos utilizam o mesmo aplicativo móvel;
+* o backend é uma aplicação modular exposta por uma API única;
+* existe um único banco de dados relacional;
+* notificações são tratadas como responsabilidade do backend, sem especificar um provedor;
+* o prontuário eletrônico é externo ao sistema;
+* a integração com o prontuário é encapsulada pelo backend.
 
-O diagrama comportamental utiliza um **diagrama de sequência**, representando a jornada crítica de agendamento de uma consulta.
+Essas decisões foram tomadas especificamente para o exercício e não representam requisitos confirmados do sistema original.
 
-Os diagramas não detalham classes, métodos, endpoints, tabelas ou tecnologias específicas.
+## 3. Nível e limites da arquitetura
 
-## 4. Limites e responsabilidades
+O diagrama estrutural utiliza uma visão inspirada no **C4 no nível de Containers**. O objetivo é mostrar os principais blocos do sistema e suas dependências, sem detalhar classes, componentes, endpoints ou tecnologias.
 
-O sistema possui um aplicativo móvel utilizado por pacientes e médicos. Para simplificar o exercício, assume-se que ambos utilizam o mesmo aplicativo, com funcionalidades diferentes de acordo com o perfil.
+O diagrama comportamental representa a jornada crítica de **agendamento de uma consulta** por meio de um diagrama de sequência.
 
-O backend é representado como uma aplicação modular exposta por uma API única. Suas responsabilidades incluem agenda, agendamento, persistência e notificações. A representação como uma aplicação única não implica ausência de separação lógica entre essas responsabilidades.
+O limite principal do sistema inclui o aplicativo móvel, o backend e o banco de dados. O sistema de prontuário eletrônico fica fora desse limite e é tratado como uma integração externa.
 
-Assume-se um único banco de dados relacional, sem especificação de tecnologia.
+O backend concentra as responsabilidades de agenda, agendamento, persistência e notificações. A separação dessas responsabilidades é conceitual e não implica a adoção de microsserviços.
 
-O sistema de prontuário eletrônico está fora do limite da aplicação e é tratado como uma integração externa. O acesso a ele é encapsulado pelo backend.
-
-## 5. Integrações externas
-
-A principal integração externa considerada é o sistema de prontuário eletrônico.
-
-Assume-se que, após a confirmação do agendamento, informações relacionadas à consulta possam ser encaminhadas ao prontuário.
-
-O contexto disponível não define protocolo, formato dos dados, autenticação, contrato da API ou comportamento em caso de indisponibilidade. Esses pontos permanecem como lacunas.
-
-Não foi representado um provedor externo de notificações, pois o contexto não informa qual tecnologia ou serviço seria utilizado.
-
-## 6. Hipóteses adotadas
-
-Como o contexto original é limitado, foram adotadas as seguintes hipóteses para viabilizar o exercício:
-
-1. Pacientes e médicos utilizam o mesmo aplicativo móvel.
-2. O backend é uma aplicação modular exposta por uma API única.
-3. O sistema utiliza um único banco de dados relacional.
-4. O agendamento é confirmado antes da atualização do prontuário eletrônico.
-5. A integração com o prontuário é encapsulada pelo backend.
-6. As notificações são tratadas como responsabilidade interna, sem especificação de provedor.
-7. O paciente precisa estar identificado para realizar um agendamento.
-8. Somente horários disponíveis podem ser agendados.
-9. Um mesmo horário não pode ser reservado simultaneamente por dois pacientes.
-10. Cada agendamento está associado a um paciente e a um médico.
-
-Essas hipóteses não representam requisitos confirmados do sistema.
-
-## 7. Restrições arquiteturais
-
-Os diagramas seguem as seguintes restrições:
-
-* manter o diagrama estrutural no nível de Containers;
-* não misturar componentes, classes, endpoints ou detalhes de implementação;
-* utilizar uma API única como ponto de entrada do aplicativo;
-* impedir que o aplicativo ou outras responsabilidades internas dependam diretamente do prontuário externo;
-* não assumir tecnologias que não foram fornecidas;
-* mostrar somente dependências relevantes para o escopo;
-* utilizar Mermaid como formato dos diagramas;
-* distinguir fatos conhecidos de hipóteses e lacunas.
-
-## 8. Diagrama estrutural
+## 4. Diagrama estrutural
 
 A visão estrutural representa os principais containers e suas dependências.
 
@@ -104,11 +66,11 @@ flowchart LR
     Backend -->|"Integração com prontuário"| Prontuario
 ```
 
-O código-fonte deste diagrama também está disponível em [`diagrams/container.md`](diagrams/container.md).
+O código do diagrama está disponível em [`diagrams/container.md`](diagrams/container.md).
 
-## 9. Diagrama de sequência
+## 5. Diagrama comportamental
 
-A jornada crítica escolhida é o agendamento de uma consulta, incluindo também o cenário em que o horário selecionado já não está disponível.
+A jornada escolhida como fluxo crítico é o **agendamento de uma consulta**.
 
 ```mermaid
 sequenceDiagram
@@ -143,50 +105,121 @@ sequenceDiagram
     end
 ```
 
-O código-fonte deste diagrama também está disponível em [`diagrams/sequence.md`](diagrams/sequence.md).
+O código do diagrama está disponível em [`diagrams/sequence.md`](diagrams/sequence.md).
 
-## 10. Uso da GenAI e ajustes realizados
+## 6. Restrições adotadas
 
-Os diagramas foram gerados com apoio de Inteligência Artificial Generativa a partir da descrição do sistema, das restrições e das hipóteses levantadas durante o *discovery*.
+Os diagramas foram elaborados considerando as seguintes restrições:
 
-A geração foi tratada como uma proposta inicial, e não como uma definição automática da arquitetura. A saída do modelo foi revisada considerando o contexto disponível e as decisões de escopo adotadas para a atividade.
+* manter o diagrama estrutural no nível de Containers;
+* não representar classes, componentes, endpoints ou tabelas;
+* utilizar uma API única como ponto de entrada do aplicativo;
+* não assumir arquitetura de microsserviços sem evidências;
+* manter o prontuário eletrônico fora do limite do sistema;
+* encapsular a integração com o prontuário no backend;
+* não assumir tecnologias ou protocolos não fornecidos;
+* mostrar somente dependências relevantes ao escopo;
+* manter hipóteses e lacunas explícitas.
 
-Entre os principais ajustes e decisões estão:
+## 7. Decisões e ajustes sobre a saída da GenAI
 
-* adoção de uma API única em vez de múltiplos serviços independentes, para evitar complexidade arquitetural desnecessária;
-* representação do backend como aplicação modular, sem assumir uma arquitetura de microsserviços;
-* utilização de um único banco de dados;
-* representação do prontuário eletrônico como sistema externo;
-* encapsulamento da integração com o prontuário no backend;
-* não especificação de tecnologias, protocolos ou provedores que não estavam presentes no contexto;
-* tratamento das notificações como responsabilidade interna, sem inventar um fornecedor externo;
-* confirmação do agendamento antes da atualização do prontuário, mantendo a integração externa desacoplada da decisão de agendamento;
-* inclusão do cenário de horário indisponível no diagrama de sequência.
+A GenAI foi utilizada para produzir uma proposta inicial de representação arquitetural. A saída foi revisada antes de ser incorporada ao repositório.
 
-## 11. Lacunas identificadas
+### API única
 
-A documentação ainda não é suficiente para implementar o sistema sem decisões adicionais. Entre as principais lacunas estão:
+Foi mantida uma API única em vez de dividir o backend em múltiplos serviços. A escolha reduz a complexidade e evita assumir microsserviços sem evidências no contexto.
 
-* tecnologias do aplicativo, backend e banco de dados;
-* mecanismo de autenticação e autorização;
-* modelo detalhado dos dados;
-* contrato da integração com o prontuário;
-* protocolo e formato dos dados da integração;
+### Backend modular
+
+As responsabilidades de agenda, agendamento, persistência e notificações foram mantidas dentro de um backend único. A modularidade é conceitual e não representa necessariamente serviços independentes.
+
+### Banco de dados único
+
+Foi adotado um único banco de dados relacional. A tecnologia não foi especificada porque não fazia parte dos inputs disponíveis.
+
+### Prontuário como sistema externo
+
+A integração com o prontuário foi representada como externa ao sistema. O acesso foi concentrado no backend para evitar que o aplicativo ou outras responsabilidades dependam diretamente de detalhes do sistema externo.
+
+### Notificações
+
+Não foi incluído um provedor específico de notificações. Embora o sistema original mencione notificações, o contexto não informa qual tecnologia ou serviço seria utilizado.
+
+### Ordem do agendamento e integração
+
+Foi adotada a hipótese de que o agendamento é registrado e confirmado antes da atualização do prontuário. Essa decisão evita tornar o sistema externo um pré-requisito para a confirmação da operação principal.
+
+### Cenário de horário indisponível
+
+Foi acrescentado ao diagrama de sequência um caminho alternativo para o caso de o horário selecionado já ter sido reservado. Essa situação decorre da regra assumida de que um horário não pode ser reservado simultaneamente por dois pacientes.
+
+## 8. O que a GenAI inferiu corretamente
+
+A GenAI conseguiu inferir adequadamente:
+
+* a necessidade de um aplicativo como interface dos usuários;
+* a existência de um backend para intermediar as operações;
+* a necessidade de persistência;
+* a existência de uma integração externa com o prontuário;
+* a necessidade de separar a integração externa das demais responsabilidades;
+* o agendamento como uma jornada crítica adequada para o diagrama comportamental.
+
+A IA também ajudou a identificar decisões que não estavam presentes no contexto original.
+
+## 9. O que permaneceu como lacuna
+
+Mesmo após a elaboração dos diagramas, permanecem indefinidos:
+
+* tecnologias do aplicativo, backend e banco;
+* autenticação e autorização;
+* modelo detalhado de dados;
+* contrato e protocolo da integração com o prontuário;
+* dados enviados e recebidos nessa integração;
 * mecanismo efetivo de notificações;
-* tratamento de falhas na integração externa;
+* comportamento diante da indisponibilidade do prontuário;
 * regras detalhadas de disponibilidade e cancelamento;
 * requisitos de segurança e privacidade;
 * requisitos de desempenho e disponibilidade;
-* estratégia de implantação e monitoramento.
+* infraestrutura e estratégia de implantação.
 
-Essas lacunas são mantidas explicitamente para evitar que agentes de desenvolvimento tratem hipóteses como requisitos confirmados.
+Esses pontos não foram preenchidos artificialmente, pois representam decisões que deveriam ser definidas antes de uma implementação real.
 
-## 12. Reflexão
+## 10. O que seria necessário para um agente implementar o sistema sem inventar decisões?
 
-A GenAI conseguiu inferir corretamente uma estrutura básica para o sistema a partir das informações disponíveis, principalmente a existência de um aplicativo móvel, um backend, persistência e uma integração externa com o prontuário eletrônico.
+Para que esta documentação pudesse servir como contexto suficiente para um agente de desenvolvimento, seria necessário complementá-la principalmente com:
 
-Entretanto, várias decisões arquiteturais não estavam presentes no contexto original. Foi necessário revisar as sugestões do modelo e decidir quais simplificações seriam adequadas ao exercício. Em especial, optou-se por uma API única, um backend modular e um único banco de dados, evitando introduzir microsserviços ou tecnologias específicas sem justificativa.
+* requisitos funcionais detalhados;
+* regras completas de negócio;
+* modelo de dados;
+* contratos das APIs;
+* contrato da integração com o prontuário;
+* mecanismos de autenticação e autorização;
+* estratégia de notificações;
+* requisitos de segurança, desempenho e disponibilidade;
+* tratamento de erros e falhas;
+* decisões tecnológicas;
+* infraestrutura e estratégia de implantação;
+* critérios de aceitação e testes.
 
-Para que um agente pudesse construir o sistema sem inventar decisões, a documentação precisaria evoluir com contratos de integração, regras de negócio detalhadas, modelo de dados, requisitos não funcionais, mecanismos de autenticação e notificações, tratamento de falhas e decisões tecnológicas e de infraestrutura.
+A principal lacuna não é apenas a ausência de mais diagramas, mas a ausência de decisões e regras que determinem **como o sistema deve se comportar**.
 
-A principal conclusão é que diagramas gerados por IA podem acelerar a documentação, mas precisam ser tratados como artefatos revisáveis. A explicitação de hipóteses e lacunas é tão importante quanto o próprio diagrama para que essa documentação possa futuramente servir como contexto confiável para agentes de desenvolvimento.
+## 11. Conclusão
+
+A utilização de GenAI acelerou a identificação de lacunas e a elaboração dos diagramas, mas a saída do modelo não foi tratada como uma definição automática da arquitetura.
+
+A revisão humana foi necessária para controlar o escopo, eliminar complexidade não justificada e distinguir fatos fornecidos de hipóteses adotadas.
+
+O resultado mostra que diagramas em código podem funcionar como documentação versionável e revisável, mas seu valor como contexto para agentes depende da existência de informações suficientemente precisas sobre responsabilidades, integrações, regras e decisões arquiteturais.
+
+## 12. Artefatos do repositório
+
+```text
+agendamento-consultas-diagrams/
+├── README.md
+├── discovery.md
+└── diagrams/
+    ├── container.md
+    └── sequence.md
+```
+
+O arquivo `discovery.md` registra os prompts utilizados e o processo de interação com a GenAI. Os arquivos na pasta `diagrams/` contêm os códigos Mermaid dos diagramas finais.
