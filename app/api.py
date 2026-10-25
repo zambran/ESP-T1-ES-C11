@@ -5,15 +5,12 @@ from .agendamentos import Agenda, HorarioIndisponivel
 from .database import Database
 from .prontuario import ProntuarioFake, ProntuarioIndisponivel
 
+from functools import lru_cache
 
 app = FastAPI(
     title="API de Agendamento de Consultas",
     version="0.1.0",
 )
-
-database = Database()
-agenda = Agenda(database)
-prontuario = ProntuarioFake()
 
 
 class AgendamentoInput(BaseModel):
@@ -22,12 +19,14 @@ class AgendamentoInput(BaseModel):
     horario: str = Field(min_length=1)
 
 
+@lru_cache
 def get_agenda() -> Agenda:
-    return agenda
+    return Agenda(Database())
 
 
+@lru_cache
 def get_prontuario() -> ProntuarioFake:
-    return prontuario
+    return ProntuarioFake()
 
 
 @app.get("/health")
