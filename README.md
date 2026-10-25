@@ -1,225 +1,130 @@
-# Documentação Arquitetural — Aplicativo de Agendamento de Consultas
+# Agendamento de Consultas
 
-## 1. Sobre o projeto
+Protótipo acadêmico de uma API para consultar horários e registrar agendamentos. O projeto usa SQLite para persistência e simula a integração com um sistema externo de prontuário por meio de um fake substituível nos testes.
 
-Este repositório apresenta uma pequena fase de *discovery* arquitetural de um aplicativo móvel para agendamento de consultas médicas, utilizando **GenAI** e a abordagem **diagrams as code**.
+## Escopo do protótipo
 
-O cenário é acadêmico e foi reaproveitado de uma atividade anterior da disciplina. Como o contexto original possui informações limitadas, foram identificadas lacunas e adotadas algumas hipóteses para permitir a elaboração dos diagramas. Essas hipóteses são explicitadas para não serem confundidas com requisitos reais do sistema.
+O fluxo implementado é:
 
-## 2. Meus inputs e definição do escopo
+1. Consultar horários disponíveis para um médico.
+2. Reservar um horário.
+3. Persistir o agendamento no SQLite.
+4. Tentar atualizar o prontuário simulado.
 
-O contexto inicial fornecido para a GenAI foi baseado no projeto anterior, que descrevia um aplicativo móvel com:
+Se o prontuário simulado falhar, o agendamento continua confirmado e a API informa que a integração está pendente. Essa é uma hipótese adotada para o exercício, não um requisito confirmado de um sistema real.
 
-* cadastro de usuários;
-* gerenciamento de agenda médica;
-* agendamento de consultas;
-* notificações;
-* integração com um sistema externo de prontuário eletrônico.
+O protótipo não implementa autenticação, cancelamento, aplicativo móvel nem integração com um prontuário real. Os horários iniciais são dados de exemplo.
 
-Durante o *discovery*, o escopo foi reduzido para a **jornada de agendamento de uma consulta**, envolvendo consulta de horários disponíveis, seleção e confirmação do agendamento e posterior integração com o prontuário.
+## Requisitos
 
-Para simplificar a atividade, foram adotadas as seguintes decisões:
+- Python 3.10 ou superior
+- pip
 
-* pacientes e médicos utilizam o mesmo aplicativo móvel;
-* o backend é uma aplicação modular exposta por uma API única;
-* existe um único banco de dados relacional;
-* notificações são tratadas como responsabilidade do backend, sem especificar um provedor;
-* o prontuário eletrônico é externo ao sistema;
-* a integração com o prontuário é encapsulada pelo backend.
+## Instalação
 
-Essas decisões foram tomadas especificamente para o exercício e não representam requisitos confirmados do sistema original.
+Abra um terminal na pasta raiz do repositório.
 
-## 3. Nível e limites da arquitetura
+No PowerShell do Windows:
 
-O diagrama estrutural utiliza uma visão inspirada no **C4 no nível de Containers**. O objetivo é mostrar os principais blocos do sistema e suas dependências, sem detalhar classes, componentes, endpoints ou tecnologias.
-
-O diagrama comportamental representa a jornada crítica de **agendamento de uma consulta** por meio de um diagrama de sequência.
-
-O limite principal do sistema inclui o aplicativo móvel, o backend e o banco de dados. O sistema de prontuário eletrônico fica fora desse limite e é tratado como uma integração externa.
-
-O backend concentra as responsabilidades de agenda, agendamento, persistência e notificações. A separação dessas responsabilidades é conceitual e não implica a adoção de microsserviços.
-
-## 4. Diagrama estrutural
-
-A visão estrutural representa os principais containers e suas dependências.
-
-```mermaid
-flowchart LR
-    Paciente["Paciente"]
-    Medico["Médico"]
-
-    subgraph Sistema["Sistema de Agendamento de Consultas"]
-        App["Aplicativo Mobile<br/>Interface para pacientes e médicos"]
-
-        Backend["API / Backend<br/>Aplicação modular"]
-        Banco[("Banco de Dados<br/>Relacional")]
-
-        App -->|"Solicita operações"| Backend
-        Backend -->|"Lê e grava dados"| Banco
-    end
-
-    Prontuario["Sistema de Prontuário Eletrônico<br/><<external>>"]
-
-    Paciente -->|"Utiliza"| App
-    Medico -->|"Utiliza"| App
-
-    Backend -->|"Integração com prontuário"| Prontuario
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
-O código do diagrama está disponível em [`diagrams/container.md`](diagrams/container.md).
+Se o PowerShell impedir a ativação do ambiente virtual, abra o Prompt de Comando e use:
 
-## 5. Diagrama comportamental
-
-A jornada escolhida como fluxo crítico é o **agendamento de uma consulta**.
-
-```mermaid
-sequenceDiagram
-    actor Paciente
-    participant App as Aplicativo Mobile
-    participant API as API / Backend
-    participant BD as Banco de Dados
-    participant PE as Prontuário Eletrônico
-
-    Paciente->>App: Consulta horários disponíveis
-    App->>API: Solicita horários
-    API->>BD: Consulta disponibilidade
-    BD-->>API: Retorna horários disponíveis
-    API-->>App: Exibe horários disponíveis
-
-    Paciente->>App: Seleciona horário
-    App->>API: Solicita agendamento
-    API->>BD: Valida disponibilidade
-
-    alt Horário disponível
-        API->>BD: Registra agendamento
-        BD-->>API: Agendamento registrado
-        API-->>App: Confirma agendamento
-        App-->>Paciente: Exibe confirmação
-
-        API->>PE: Atualiza informações da consulta
-        PE-->>API: Retorna resultado da integração
-    else Horário indisponível
-        BD-->>API: Horário já reservado
-        API-->>App: Informa indisponibilidade
-        App-->>Paciente: Solicita escolha de outro horário
-    end
+```bat
+.venv\Scripts\activate.bat
 ```
 
-O código do diagrama está disponível em [`diagrams/sequence.md`](diagrams/sequence.md).
+## Executar a API
 
-## 6. Restrições adotadas
+Na pasta raiz do projeto, com o ambiente virtual ativado:
 
-Os diagramas foram elaborados considerando as seguintes restrições:
+```powershell
+uvicorn app.api:app --reload
+```
 
-* manter o diagrama estrutural no nível de Containers;
-* não representar classes, componentes, endpoints ou tabelas;
-* utilizar uma API única como ponto de entrada do aplicativo;
-* não assumir arquitetura de microsserviços sem evidências;
-* manter o prontuário eletrônico fora do limite do sistema;
-* encapsular a integração com o prontuário no backend;
-* não assumir tecnologias ou protocolos não fornecidos;
-* mostrar somente dependências relevantes ao escopo;
-* manter hipóteses e lacunas explícitas.
+A API estará disponível em:
 
-## 7. Decisões e ajustes sobre a saída da GenAI
+- Base: http://127.0.0.1:8000
+- Documentação interativa: http://127.0.0.1:8000/docs
+- Verificação de saúde: http://127.0.0.1:8000/health
 
-A GenAI foi utilizada para produzir uma proposta inicial de representação arquitetural. A saída foi revisada antes de ser incorporada ao repositório.
+O SQLite é criado automaticamente em `data/agendamentos.sqlite3`, relativo à pasta de onde a API foi iniciada.
 
-### API única
+Para usar outro arquivo de banco no PowerShell, defina a variável antes de iniciar a API:
 
-Foi mantida uma API única em vez de dividir o backend em múltiplos serviços. A escolha reduz a complexidade e evita assumir microsserviços sem evidências no contexto.
+```powershell
+$env:AGENDAMENTOS_DB_PATH = "data/demo.sqlite3"
+uvicorn app.api:app --reload
+```
 
-### Backend modular
+## Experimentar os endpoints
 
-As responsabilidades de agenda, agendamento, persistência e notificações foram mantidas dentro de um backend único. A modularidade é conceitual e não representa necessariamente serviços independentes.
+Os exemplos abaixo usam PowerShell.
 
-### Banco de dados único
+### Consultar horários
 
-Foi adotado um único banco de dados relacional. A tecnologia não foi especificada porque não fazia parte dos inputs disponíveis.
+```powershell
+Invoke-RestMethod `
+  -Uri "http://127.0.0.1:8000/horarios?medico_id=medico-1" `
+  -Method Get
+```
 
-### Prontuário como sistema externo
+### Criar um agendamento
 
-A integração com o prontuário foi representada como externa ao sistema. O acesso foi concentrado no backend para evitar que o aplicativo ou outras responsabilidades dependam diretamente de detalhes do sistema externo.
+```powershell
+$body = @{
+  paciente_id = "paciente-123"
+  medico_id = "medico-1"
+  horario = "2026-11-02T09:00:00"
+} | ConvertTo-Json
 
-### Notificações
+Invoke-RestMethod `
+  -Uri "http://127.0.0.1:8000/agendamentos" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body
+```
 
-Não foi incluído um provedor específico de notificações. Embora o sistema original mencione notificações, o contexto não informa qual tecnologia ou serviço seria utilizado.
+Uma reserva bem-sucedida retorna o agendamento e o estado da integração com o prontuário. Uma nova tentativa de reservar o mesmo horário retorna HTTP `409`. Uma solicitação com campos obrigatórios ausentes retorna HTTP `422`.
 
-### Ordem do agendamento e integração
+## Executar os testes
 
-Foi adotada a hipótese de que o agendamento é registrado e confirmado antes da atualização do prontuário. Essa decisão evita tornar o sistema externo um pré-requisito para a confirmação da operação principal.
+Com o ambiente virtual ativado, na pasta raiz do projeto:
 
-### Cenário de horário indisponível
+```powershell
+pytest -v
+```
 
-Foi acrescentado ao diagrama de sequência um caminho alternativo para o caso de o horário selecionado já ter sido reservado. Essa situação decorre da regra assumida de que um horário não pode ser reservado simultaneamente por dois pacientes.
+Os testes usam um banco SQLite temporário e um prontuário fake. Eles cobrem a consulta e reserva de horário, a tentativa de duplicar uma reserva, a falha do prontuário e entradas inválidas.
 
-## 8. O que a GenAI inferiu corretamente
-
-A GenAI conseguiu inferir adequadamente:
-
-* a necessidade de um aplicativo como interface dos usuários;
-* a existência de um backend para intermediar as operações;
-* a necessidade de persistência;
-* a existência de uma integração externa com o prontuário;
-* a necessidade de separar a integração externa das demais responsabilidades;
-* o agendamento como uma jornada crítica adequada para o diagrama comportamental.
-
-A IA também ajudou a identificar decisões que não estavam presentes no contexto original.
-
-## 9. O que permaneceu como lacuna
-
-Mesmo após a elaboração dos diagramas, permanecem indefinidos:
-
-* tecnologias do aplicativo, backend e banco;
-* autenticação e autorização;
-* modelo detalhado de dados;
-* contrato e protocolo da integração com o prontuário;
-* dados enviados e recebidos nessa integração;
-* mecanismo efetivo de notificações;
-* comportamento diante da indisponibilidade do prontuário;
-* regras detalhadas de disponibilidade e cancelamento;
-* requisitos de segurança e privacidade;
-* requisitos de desempenho e disponibilidade;
-* infraestrutura e estratégia de implantação.
-
-Esses pontos não foram preenchidos artificialmente, pois representam decisões que deveriam ser definidas antes de uma implementação real.
-
-## 10. O que seria necessário para um agente implementar o sistema sem inventar decisões?
-
-Para que esta documentação pudesse servir como contexto suficiente para um agente de desenvolvimento, seria necessário complementá-la principalmente com:
-
-* requisitos funcionais detalhados;
-* regras completas de negócio;
-* modelo de dados;
-* contratos das APIs;
-* contrato da integração com o prontuário;
-* mecanismos de autenticação e autorização;
-* estratégia de notificações;
-* requisitos de segurança, desempenho e disponibilidade;
-* tratamento de erros e falhas;
-* decisões tecnológicas;
-* infraestrutura e estratégia de implantação;
-* critérios de aceitação e testes.
-
-A principal lacuna não é apenas a ausência de mais diagramas, mas a ausência de decisões e regras que determinem **como o sistema deve se comportar**.
-
-## 11. Conclusão
-
-A utilização de GenAI acelerou a identificação de lacunas e a elaboração dos diagramas, mas a saída do modelo não foi tratada como uma definição automática da arquitetura.
-
-A revisão humana foi necessária para controlar o escopo, eliminar complexidade não justificada e distinguir fatos fornecidos de hipóteses adotadas.
-
-O resultado mostra que diagramas em código podem funcionar como documentação versionável e revisável, mas seu valor como contexto para agentes depende da existência de informações suficientemente precisas sobre responsabilidades, integrações, regras e decisões arquiteturais.
-
-## 12. Artefatos do repositório
+## Estrutura do projeto
 
 ```text
-agendamento-consultas-diagrams/
-├── README.md
-├── discovery.md
-└── diagrams/
-    ├── container.md
-    └── sequence.md
+.
+├── app/
+│   ├── __init__.py
+│   ├── agendamentos.py
+│   ├── api.py
+│   ├── database.py
+│   └── prontuario.py
+├── atividade/
+│   ├── casos-gerados.md
+│   ├── prompts.md
+│   └── reflexao.md
+├── tests/
+│   ├── conftest.py
+│   └── integration/
+│       └── test_agendamentos.py
+└── requirements.txt
 ```
 
-O arquivo `discovery.md` registra os prompts utilizados e o processo de interação com a GenAI. Os arquivos na pasta `diagrams/` contêm os códigos Mermaid dos diagramas finais.
+## Atividade sobre prompts e testes de integração
+
+A pasta `atividade/` registra os prompts usados para propor cenários de integração, os casos selecionados e a reflexão sobre a qualidade e a diversidade das sugestões.
+
+Os casos foram associados a testes automatizados. Depois de executar a suíte, complete `atividade/reflexao.md` com o comando utilizado, os resultados observados e quaisquer ajustes feitos nos casos.
